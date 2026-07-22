@@ -18,7 +18,6 @@ window.addEventListener('keydown', (event) => {
     }
 })
 
-
 // scene
 const scene = new THREE.Scene();
 // canvas
@@ -30,58 +29,74 @@ history.scrollRestoration = "manual";
  * Blender GameCube Games
  */
 // distance between disks
-
-const discDistance = {
-    space: 6
-}
+const distanceBetween = 6;
+let currentDistance = 0;
 
 const discs = [
     '/models/Mario_Kart.glb',
     '/models/DBZ2.glb',
-    '/models/Avalanche.glb',,
+    '/models/Avalanche.glb',
     '/models/Strikers.glb',
-    '/models/Super_Smash.glb',,
+    '/models/Super_Smash.glb',
     '/models/Pro_Skater.glb',
     '/models/Sonic.glb',
     '/models/DBZ.glb',
-
 ]
 
-/*
-let model = {};
-let modelRotation = {};
-
-const gltfLoader = new GLTFLoader();
-gltfLoader.load(
-    '/models/Mario_Kart.glb',
-    (gltf) => {
-        console.log(gltf);
-
-        // adjust the disk material
-        gltf.scene.traverse((child) => {
-            if (child.isMesh){
-                // to be 0.5 - 0.8
-                child.material.metalness = 0;
-                // to be .15 - .3
-                child.material.roughness = 1;
-                //child.envMapIntensity = 1.5;
-            }
-        })
-        gltf.scene.rotation.y = -Math.PI/2;
-        model = gltf.scene;
-        //model.scale.setScalar(10.0); 
-        
-        scene.add(gltf.scene)
-
+const loadingManger = new THREE.LoadingManager(
+    // loaded
+    ()=> {
+        //console.log('loaded')
+    },
+    //progressing
+    () => {
+        //console.log('progress')
     }
-)
-*/
+);
+
+const gltfLoader = new GLTFLoader(loadingManger);
+// store each blender disc mesh that will animate
+let discModels;
+
+async function loadModels(){
+    // map each url, use aysnc for the await loadAsync
+    const promiseArray = discs.map(async disc => {
+        const gltf = await gltfLoader.loadAsync(disc);
+           // adjust the disk material
+            gltf.scene.traverse((child) => {
+                if (child.isMesh){
+                    // to be 0.5 - 0.8
+                    child.material.metalness = 0.5;
+                    // to be .15 - .3
+                    child.material.roughness = .15;
+                    //child.envMapIntensity = 1.5;
+                }
+            })
+            gltf.scene.rotation.y = -Math.PI/2;
+            scene.add(gltf.scene)
+            return gltf.scene
+    })
+    // use allsettled so that the promise does not terminate if one fails
+    const results = await Promise.allSettled(promiseArray);
+    // only store the models that successfully loaded
+    discModels = results.filter(disc => disc.status === 'fulfilled').map(disc => disc.value);
+}
+
+//once all of the models are loaded, add the gsap .to animation to each model
+loadModels().then(animateModel);
+
+// add the gsap animations to each model
+function animateModel(){
+    console.log(discModels)
+}
+
+
 
 /**
  * Torus
  */
 // material
-
+/*
 const meshDistance = 6;
 const material = new THREE.MeshBasicMaterial({ color: 0x0000ff });
 //geometry
@@ -109,7 +124,7 @@ const torusMeshes = {
     torus2,
     torus3
 }
-
+*/
 // window size
 const size = {
     width: window.innerWidth,
@@ -140,17 +155,27 @@ window.addEventListener('resize', () =>{
  * Lights
 */
 // ambient light
-const ambientLight = new THREE.AmbientLight(0xffffff, 2.4)
+
+const ambientLight = new THREE.AmbientLight(0xffffff, 3.5)
 scene.add(ambientLight)
 
 // directional light
-const directionalLight = new THREE.DirectionalLight(0xffffff, 1.8)
-directionalLight.position.set(5, 5, 5);
-//directionalLight.target.position.set(model);
+//const directionalLight = new THREE.DirectionalLight(0xffffff, 4)
+const directionalLight = new THREE.DirectionalLight(0xffffff, 3)
 scene.add(directionalLight)
 
-//const helper = new THREE.DirectionalLightHelper(directionalLight, 1);
+
+//const helper = new THREE.DirectionalLightHelper(directionalLight, 10);
+//directionalLight.position.z = 4;
+//directionalLight.position.y = 4;
+//directionalLight.rotation.x = Math.PI / 2;
 //scene.add(helper);
+
+
+//const axesHelper = new THREE.AxesHelper(30);
+//scene.add(axesHelper)
+
+
 
 /**
  * Camera
@@ -198,6 +223,8 @@ let tl = gsap.timeline({
     },
 });
 
+
+/*
 // rotate out
 tl.to(torus.position, {x: -(meshDistance), duration: 2});
 tl.to(torus.rotation, {y: (Math.PI), duration: 1}, "-=1.9");
@@ -219,7 +246,7 @@ tl.to(torus4.position, {x: '0', duration: 1, ease: "power1.out"}, "-=.75");
 // rotate out position out
 tl.to(torus4.position, {x: -(meshDistance), duration: 2, ease: "power1.in"});
 tl.to(torus4.rotation, {y: (Math.PI), duration: 1}, "-=1");
-
+*/
 
 
 /**
@@ -232,6 +259,10 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 // to remove after creating shader
 renderer.setClearColor('#ffffff');
 renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 2
+
+
 
 // clock for animation
 const clock = new THREE.Clock()
