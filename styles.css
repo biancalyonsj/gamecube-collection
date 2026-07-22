@@ -1,0 +1,18 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+.scroll {
+    width: 100vw;
+    height: 500vh; /* Previously 525vh*/
+}
+
+::-webkit-scrollbar { display: none }
+
+.webgl {
+    outline: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+}

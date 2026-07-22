@@ -1,0 +1,23 @@
+Games:
+- DBZ Budokai 1
+- DBZ Budokai 2
+- DBZ SAGAS
+- Sonic Racers
+- Snowboarding game
+- Tony Hawk Pro Skater 4
+- Pokémon XD
+- Mario Strikers
+- Super Smash Bros.
+
+Disks:
+- Animate in circle
+- Reflective texture in the back
+- Front Design with Plastic texture on top
+- Left to Right Swipe animation
+	- CD's Spin when swiped
+
+Background:
+- Topological Animation Design
+	- Moves in the beat of the music
+- Soft breakcore in the background
+- Bottom of the screen has now playing
