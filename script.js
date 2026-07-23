@@ -5,6 +5,7 @@ import Lenis from 'lenis';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import GUI from 'lil-gui'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { curlNoise } from 'three/examples/jsm/tsl/math/curlNoise.js';
 
 /**
  * GUI
@@ -28,10 +29,8 @@ history.scrollRestoration = "manual";
 /**
  * Blender GameCube Games
  */
-// distance between disks
-const distanceBetween = 6;
-let currentDistance = 0;
 
+// path to blender models
 const discs = [
     '/models/Mario_Kart.glb',
     '/models/DBZ2.glb',
@@ -85,46 +84,68 @@ async function loadModels(){
 //once all of the models are loaded, add the gsap .to animation to each model
 loadModels().then(animateModel);
 
-// add the gsap animations to each model
-function animateModel(){
-    console.log(discModels)
-}
-
-
 
 /**
- * Torus
+ * Smooth Scrolling
  */
-// material
-/*
-const meshDistance = 6;
-const material = new THREE.MeshBasicMaterial({ color: 0x0000ff });
-//geometry
-const geometry = new THREE.TorusGeometry( .75, .2, 3, 10 );
-// mesh
-const torus = new THREE.Mesh(geometry, material);
-scene.add(torus);
+const lenis = new Lenis();
+lenis.on('scroll', ScrollTrigger.update);
+gsap.ticker.add((time) => {
+    lenis.raf(time * 1000);
+})
+gsap.ticker.lagSmoothing(0);
 
-const material2 = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-const torus2 = new THREE.Mesh(geometry, material2);
-scene.add(torus2);
-torus2.position.x = meshDistance;
+/**
+ * Scroll Trigger
+ */
+gsap.registerPlugin(ScrollTrigger);
 
-const material3 = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-const torus3 = new THREE.Mesh(geometry, material3);
-scene.add(torus3);
-torus3.position.x = meshDistance + meshDistance;
+let tl = gsap.timeline({
+    scrollTrigger: {
+        trigger: ".scroll",
+        //markers: true,
+        start: 'top top',
+        end: 'bottom bottom',
+        scrub: 1,
+    },
+});
 
-const torus4 = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: 0xfaa5f0 }));
-scene.add(torus4);
-torus4.position.x = meshDistance + meshDistance;
+// distance between disks
+const distanceBetween = 6;
+let currentDistance = 0;
+const viewHeight = 150;
 
-const torusMeshes = {
-    torus,
-    torus2,
-    torus3
+/**
+ * Animates each mesh position and rotation
+ * using GSAP
+ */
+function animateModel(){
+    // position each mesh along the x axis
+    for (const disc of discModels){
+        disc.position.x += currentDistance;
+        currentDistance += distanceBetween;
+    }
+
+    // attach gsap animation
+    for (let i = 0; i < discModels.length; i++){
+        if ( i === 0){
+            // rotate out
+            tl.to(discModels[i].position, {x: -(distanceBetween), duration: 1.75});
+            tl.to(discModels[i].rotation, {y: (Math.PI), duration: 1}, "-=1.5");
+        } else {
+            // position in
+            tl.to(discModels[i].position, {x: '0', duration: 1.75, ease: "power1.out"}, '-=1');
+            // rotate out position out
+            tl.to(discModels[i].position, {x: -(distanceBetween), duration: 2, ease: "power1.in"});
+            tl.to(discModels[i].rotation, {y: (Math.PI), duration: 1}, "-=1");
+        }
+        
+    }
+
 }
-*/
+
+
+
 // window size
 const size = {
     width: window.innerWidth,
@@ -176,7 +197,6 @@ scene.add(directionalLight)
 //scene.add(axesHelper)
 
 
-
 /**
  * Camera
  */
@@ -198,56 +218,6 @@ gui.add(camera, 'fov').min(80).max(120).step(5).name('Camera FOV').onChange(() =
 //const controls = new OrbitControls(camera, canvas);
 //controls.enableDamping = true;
 
-/**
- * Smooth Scrolling
- */
-const lenis = new Lenis();
-lenis.on('scroll', ScrollTrigger.update);
-gsap.ticker.add((time) => {
-    lenis.raf(time * 1000);
-})
-gsap.ticker.lagSmoothing(0);
-
-/**
- * Scroll Trigger
- */
-gsap.registerPlugin(ScrollTrigger);
-
-let tl = gsap.timeline({
-    scrollTrigger: {
-        trigger: ".scroll",
-        //markers: true,
-        start: 'top top',
-        end: 'bottom bottom',
-        scrub: 1,
-    },
-});
-
-
-/*
-// rotate out
-tl.to(torus.position, {x: -(meshDistance), duration: 2});
-tl.to(torus.rotation, {y: (Math.PI), duration: 1}, "-=1.9");
-
-// position in
-tl.to(torus2.position, {x: '0', duration: 1, ease: "power1.out"}, '-=1');
-// rotate out position out
-tl.to(torus2.position, {x: -(meshDistance), duration: 2, ease: "power1.in"});
-tl.to(torus2.rotation, {y: (Math.PI), duration: 1}, "-=1");
-
-// position in 
-tl.to(torus3.position, {x: '0', duration: 1, ease: "power1.out"}, "-=.75");
-// rotate out position out
-tl.to(torus3.position, {x: -(meshDistance), duration: 2, ease: "power1.in"});
-tl.to(torus3.rotation, {y: (Math.PI), duration: 1}, "-=1");
-
-// position in 
-tl.to(torus4.position, {x: '0', duration: 1, ease: "power1.out"}, "-=.75");
-// rotate out position out
-tl.to(torus4.position, {x: -(meshDistance), duration: 2, ease: "power1.in"});
-tl.to(torus4.rotation, {y: (Math.PI), duration: 1}, "-=1");
-*/
-
 
 /**
  * Render
@@ -261,8 +231,6 @@ renderer.setClearColor('#ffffff');
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 2
-
-
 
 // clock for animation
 const clock = new THREE.Clock()

@@ -5,7 +5,7 @@
 
 .scroll {
     width: 100vw;
-    height: 500vh; /* Previously 525vh*/
+    height: 1200vh; /* 150vh * lenght of array*/
 }
 
 ::-webkit-scrollbar { display: none }
