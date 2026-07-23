@@ -56,6 +56,8 @@ const loadingManger = new THREE.LoadingManager(
 const gltfLoader = new GLTFLoader(loadingManger);
 // store each blender disc mesh that will animate
 let discModels;
+// distance between disks
+let distanceBetween;
 
 async function loadModels(){
     // map each url, use aysnc for the await loadAsync
@@ -84,6 +86,37 @@ async function loadModels(){
 //once all of the models are loaded, add the gsap .to animation to each model
 loadModels().then(animateModel);
 
+// window size
+const size = {
+    width: window.innerWidth,
+    height: window.innerHeight
+}
+
+/**
+ * Camera
+ */
+const camera = new THREE.PerspectiveCamera(75, size.width / size.height, 0.1, 100);
+
+camera.position.set(0,0,5)
+
+scene.add(camera)
+
+
+/**
+ * Calculate Distance between disc
+ * based on horizontal fov so that the 
+ * position of the disc when it rotates out of 
+ * view is outside the frustrum
+ */
+function calculateDistance(){
+    // tan() => radians, convert fov to radians
+    let fovRadians = (camera.fov / 2) * (Math.PI / 180);
+
+    // calculate the horizontal FOV so discs are outside frustrum
+    const halfWidth = camera.position.z * Math.tan(fovRadians) * camera.aspect;
+    console.log(halfWidth);
+    return halfWidth;
+}
 
 /**
  * Smooth Scrolling
@@ -100,19 +133,27 @@ gsap.ticker.lagSmoothing(0);
  */
 gsap.registerPlugin(ScrollTrigger);
 
-let tl = gsap.timeline({
-    scrollTrigger: {
-        trigger: ".scroll",
-        //markers: true,
-        start: 'top top',
-        end: 'bottom bottom',
-        scrub: 1,
-    },
-});
+let tl;
 
-// distance between disks
-const distanceBetween = 6;
-let currentDistance = 0;
+function createTimeline(){
+    // delete old timelines and ScrollTrigger Instance to prevent glitches
+    if (tl){
+        tl.kill()
+    }
+    
+    // create new timeline
+    tl = gsap.timeline({
+        scrollTrigger: {
+            trigger: ".scroll",
+            //markers: true,
+            start: 'top top',
+            end: 'bottom bottom',
+            scrub: 1,
+        },
+    });
+}
+
+
 const viewHeight = 150;
 
 /**
@@ -120,16 +161,27 @@ const viewHeight = 150;
  * using GSAP
  */
 function animateModel(){
+    // calculate how far apart the discs need to be based on horizontal fov
+    distanceBetween = calculateDistance() + 2;
+    // keep track of prev distance
+    let currentDistance = 0;
     // position each mesh along the x axis
+    //console.log('Position: ',discModels[1].position.x)
     for (const disc of discModels){
+        // reset position to the origin
+        disc.position.x = 0;
+
+        // position the disc outside of the frustrum
         disc.position.x += currentDistance;
         currentDistance += distanceBetween;
     }
+    // create a new timeline for the scroll trigger
+    createTimeline();
 
     // attach gsap animation
     for (let i = 0; i < discModels.length; i++){
         if ( i === 0){
-            // rotate out
+            // the first mesh position and rotate out
             tl.to(discModels[i].position, {x: -(distanceBetween), duration: 1.75});
             tl.to(discModels[i].rotation, {y: (Math.PI), duration: 1}, "-=1.5");
         } else {
@@ -141,19 +193,16 @@ function animateModel(){
         }
         
     }
-
 }
 
+/**
+ * Animates each mesh when it is
+ * idle on the screen/not moving
+ */
+function idleAnimation(){
+    //if (!isMoving)
 
-
-// window size
-const size = {
-    width: window.innerWidth,
-    height: window.innerHeight
-   
 }
-
-//gui.add(discDistance, 'space').min(4).max(10).step(1).name('Disc Distance');
 
 /**
  * Resize
@@ -163,8 +212,15 @@ window.addEventListener('resize', () =>{
     size.height = window.innerHeight;
     size.width = window.innerWidth;
 
-    // update the camera
+    // update the camera new aspect
     camera.aspect = size.width / size.height;
+
+    // update horizontal fov so discs remain outside of frustrum
+    console.log('Before: ',ScrollTrigger.getAll().length)
+    animateModel();
+    console.log('After: ',ScrollTrigger.getAll().length)
+
+    // update camera in scene
     camera.updateProjectionMatrix();
 
     //update renderer
@@ -176,41 +232,19 @@ window.addEventListener('resize', () =>{
  * Lights
 */
 // ambient light
-
 const ambientLight = new THREE.AmbientLight(0xffffff, 3.5)
 scene.add(ambientLight)
 
 // directional light
-//const directionalLight = new THREE.DirectionalLight(0xffffff, 4)
-const directionalLight = new THREE.DirectionalLight(0xffffff, 3)
+const directionalLight = new THREE.DirectionalLight(0xffffff, 2)
+directionalLight.position.z = 4;
+directionalLight.position.y = 4;
+directionalLight.rotation.x = Math.PI / 2;
 scene.add(directionalLight)
 
-
 //const helper = new THREE.DirectionalLightHelper(directionalLight, 10);
-//directionalLight.position.z = 4;
-//directionalLight.position.y = 4;
-//directionalLight.rotation.x = Math.PI / 2;
 //scene.add(helper);
 
-
-//const axesHelper = new THREE.AxesHelper(30);
-//scene.add(axesHelper)
-
-
-/**
- * Camera
- */
-const camera = new THREE.PerspectiveCamera(75, size.width / size.height, 0.1, 100);
-//camera.lookAt(model)
-//camera.position.set(0,0,.5)
-camera.position.set(0,0,5)
-scene.add(camera)
-
-// add to gui
-gui.add(camera.position, 'z').min(.5).max(1).step(.2).name('Camera Z');
-gui.add(camera, 'fov').min(80).max(120).step(5).name('Camera FOV').onChange(() => {
-    camera.updateProjectionMatrix();
-});
 
 /**
  * Controls
@@ -222,7 +256,7 @@ gui.add(camera, 'fov').min(80).max(120).step(5).name('Camera FOV').onChange(() =
 /**
  * Render
  */
-const renderer = new THREE.WebGLRenderer({canvas});
+const renderer = new THREE.WebGLRenderer({canvas:canvas, antialias: true});
 renderer.setSize(size.width, size.height);
 // handle pixel ratio, limit it to 2 to prevent performance issues
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -239,7 +273,6 @@ const clock = new THREE.Clock()
 function animate () {
     // clock
     const elapsedTime = clock.getElapsedTime();
-    //console.log(torus.rotation.y);
 
     // rotate the cd in a circle
     //torus.rotation.y = Math.sin(elapsedTime) * .3;
@@ -249,11 +282,15 @@ function animate () {
     //model.y = Math.sin(elapsedTime) * .3;
     //model.x = Math.cos(elapsedTime) * .2;
 
+    // animate the discs when they are not moving
+    //idleAnimation();
+
     // Update controls
     //controls.update();
 
     // render
     renderer.render(scene, camera);
+
     //console.log(window.scrollY);
 
     // call the next frame
