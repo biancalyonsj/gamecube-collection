@@ -26,6 +26,19 @@ const canvas = document.querySelector('canvas.webgl');
 // prevent browser from restoring scrollY
 history.scrollRestoration = "manual";
 
+// window size
+const size = {
+    width: window.innerWidth,
+    height: window.innerHeight
+}
+
+/**
+ * Camera
+ */
+const camera = new THREE.PerspectiveCamera(75, size.width / size.height, 0.1, 100);
+camera.position.set(0,0,5)
+scene.add(camera)
+
 /**
  * Blender GameCube Games
  */
@@ -56,6 +69,9 @@ const loadingManger = new THREE.LoadingManager(
 const gltfLoader = new GLTFLoader(loadingManger);
 // store each blender disc mesh that will animate
 let discModels;
+// bool to check if loaded is complete
+let isModelsLoaded = false;
+
 // distance between disks
 let distanceBetween;
 
@@ -74,6 +90,7 @@ async function loadModels(){
                 }
             })
             gltf.scene.rotation.y = -Math.PI/2;
+            gltf.scene.scale.set(1.2, 1.2, 1.2)
             scene.add(gltf.scene)
             return gltf.scene
     })
@@ -86,21 +103,6 @@ async function loadModels(){
 //once all of the models are loaded, add the gsap .to animation to each model
 loadModels().then(animateModel);
 
-// window size
-const size = {
-    width: window.innerWidth,
-    height: window.innerHeight
-}
-
-/**
- * Camera
- */
-const camera = new THREE.PerspectiveCamera(75, size.width / size.height, 0.1, 100);
-
-camera.position.set(0,0,5)
-
-scene.add(camera)
-
 
 /**
  * Calculate Distance between disc
@@ -111,10 +113,9 @@ scene.add(camera)
 function calculateDistance(){
     // tan() => radians, convert fov to radians
     let fovRadians = (camera.fov / 2) * (Math.PI / 180);
-
     // calculate the horizontal FOV so discs are outside frustrum
     const halfWidth = camera.position.z * Math.tan(fovRadians) * camera.aspect;
-    console.log(halfWidth);
+    // non-visible horizon distance 
     return halfWidth;
 }
 
@@ -132,7 +133,7 @@ gsap.ticker.lagSmoothing(0);
  * Scroll Trigger
  */
 gsap.registerPlugin(ScrollTrigger);
-
+// timeline variable
 let tl;
 
 function createTimeline(){
@@ -161,8 +162,10 @@ const viewHeight = 150;
  * using GSAP
  */
 function animateModel(){
+    // exit the function if loadModels has not completed or array does not exist
+    if (!discModels) return;
     // calculate how far apart the discs need to be based on horizontal fov
-    distanceBetween = calculateDistance() + 2;
+    distanceBetween = calculateDistance() + 2.2;
     // keep track of prev distance
     let currentDistance = 0;
     // position each mesh along the x axis
@@ -170,6 +173,8 @@ function animateModel(){
     for (const disc of discModels){
         // reset position to the origin
         disc.position.x = 0;
+        // reset rotation to the origin
+        disc.rotation.y = -Math.PI/2;
 
         // position the disc outside of the frustrum
         disc.position.x += currentDistance;
@@ -195,14 +200,6 @@ function animateModel(){
     }
 }
 
-/**
- * Animates each mesh when it is
- * idle on the screen/not moving
- */
-function idleAnimation(){
-    //if (!isMoving)
-
-}
 
 /**
  * Resize
@@ -216,9 +213,7 @@ window.addEventListener('resize', () =>{
     camera.aspect = size.width / size.height;
 
     // update horizontal fov so discs remain outside of frustrum
-    console.log('Before: ',ScrollTrigger.getAll().length)
     animateModel();
-    console.log('After: ',ScrollTrigger.getAll().length)
 
     // update camera in scene
     camera.updateProjectionMatrix();
@@ -236,14 +231,18 @@ const ambientLight = new THREE.AmbientLight(0xffffff, 3.5)
 scene.add(ambientLight)
 
 // directional light
-const directionalLight = new THREE.DirectionalLight(0xffffff, 2)
+const directionalLight = new THREE.DirectionalLight(0xffffff, .5)
 directionalLight.position.z = 4;
 directionalLight.position.y = 4;
+directionalLight.position.x = .2;
 directionalLight.rotation.x = Math.PI / 2;
 scene.add(directionalLight)
 
-//const helper = new THREE.DirectionalLightHelper(directionalLight, 10);
-//scene.add(helper);
+const light = new THREE.PointLight( 0xffffff, 10, 100 );
+light.position.set(-5,5,5);
+light.rotation.x = 70
+light.rotation.z = -10
+scene.add(light)
 
 
 /**
@@ -275,15 +274,13 @@ function animate () {
     const elapsedTime = clock.getElapsedTime();
 
     // rotate the cd in a circle
-    //torus.rotation.y = Math.sin(elapsedTime) * .3;
-    //torus.rotation.x = Math.cos(elapsedTime) * .2;
-    //torus.rotation.z = Math.sin(elapsedTime);
-
-    //model.y = Math.sin(elapsedTime) * .3;
-    //model.x = Math.cos(elapsedTime) * .2;
-
-    // animate the discs when they are not moving
-    //idleAnimation();
+    if (discModels){ // check if promises are still in progress
+        for (const disc of discModels){
+            disc.rotation.x = (Math.cos(elapsedTime * 1.5) * .13);
+            disc.rotation.z = Math.sin(elapsedTime) * .01;
+        }
+        
+    }
 
     // Update controls
     //controls.update();
