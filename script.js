@@ -6,6 +6,9 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import GUI from 'lil-gui'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { curlNoise } from 'three/examples/jsm/tsl/math/curlNoise.js';
+import topographicVertexShader from './shaders/vertex.glsl';
+import topographicFragmentShader from './shaders/fragment.glsl';
+
 
 /**
  * GUI
@@ -119,6 +122,16 @@ function calculateDistance(){
     return halfWidth;
 }
 
+function calculateShaderSize(){
+    // tan() => radians, convert fov to radians
+    let fovRadians = (camera.fov / 2) * (Math.PI / 180);
+    // calculate the horizontal FOV so discs are outside frustrum
+    const width = 2 * (10 * Math.tan(fovRadians) * camera.aspect);
+    const height = 2 * (10 * Math.tan(fovRadians));
+    // non-visible horizon distance 
+    return {width, height};
+}
+
 /**
  * Smooth Scrolling
  */
@@ -218,6 +231,10 @@ window.addEventListener('resize', () =>{
     // update camera in scene
     camera.updateProjectionMatrix();
 
+    // update shader background size
+    const shaderSize = calculateShaderSize();
+    topographic.scale.set(shaderSize.width, shaderSize.height);
+
     //update renderer
     renderer.setSize(size.width, size.height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -251,6 +268,27 @@ scene.add(light)
 //const controls = new OrbitControls(camera, canvas);
 //controls.enableDamping = true;
 
+/**
+ * Plane Material
+ */
+const topographicGeometry = new THREE.PlaneGeometry(1, 1, 128, 128);
+
+const topographicMaterial = new THREE.ShaderMaterial({
+    vertexShader: topographicVertexShader,
+    fragmentShader: topographicFragmentShader, 
+    uniforms: {
+        uTime: {value: 0}
+    }
+});
+
+const topographic = new THREE.Mesh(topographicGeometry, topographicMaterial);
+topographic.position.z = -5;
+scene.add(topographic);
+
+// calculate the correct shader size and scale
+const shaderSize = calculateShaderSize();
+topographic.scale.set(shaderSize.width, shaderSize.height);
+
 
 /**
  * Render
@@ -260,7 +298,7 @@ renderer.setSize(size.width, size.height);
 // handle pixel ratio, limit it to 2 to prevent performance issues
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 // to remove after creating shader
-renderer.setClearColor('#ffffff');
+//renderer.setClearColor('#ffffff');
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 2
@@ -272,6 +310,9 @@ const clock = new THREE.Clock()
 function animate () {
     // clock
     const elapsedTime = clock.getElapsedTime();
+
+    // set animation time for uniform
+    topographicMaterial.uniforms.uTime.value = elapsedTime;
 
     // rotate the cd in a circle
     if (discModels){ // check if promises are still in progress
