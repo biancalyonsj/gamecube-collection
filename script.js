@@ -5,7 +5,6 @@ import Lenis from 'lenis';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import GUI from 'lil-gui'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
-import { curlNoise } from 'three/examples/jsm/tsl/math/curlNoise.js';
 import topographicVertexShader from './shaders/vertex.glsl';
 import topographicFragmentShader from './shaders/fragment.glsl';
 
@@ -47,6 +46,7 @@ scene.add(camera)
  */
 
 // path to blender models
+
 const discs = [
     '/models/Mario_Kart.glb',
     '/models/DBZ2.glb',
@@ -85,11 +85,19 @@ async function loadModels(){
            // adjust the disk material
             gltf.scene.traverse((child) => {
                 if (child.isMesh){
-                    // to be 0.5 - 0.8
-                    child.material.metalness = 0.5;
-                    // to be .15 - .3
-                    child.material.roughness = .15;
-                    //child.envMapIntensity = 1.5;
+                    if (child.material.name === 'Whole Disk'){
+                        child.material = new THREE.MeshNormalMaterial();
+                    } else {
+                        child.material.metalness = 0.5;
+                        child.material.roughness = .15;
+                    }
+                    if (child.material.name === 'Mario'){
+                       child.material.metalness = 0.3;
+                    }
+                    if (child.material.name === 'Material.001'){
+                        child.material.metalness = 0.6;
+                    }
+                    
                 }
             })
             gltf.scene.rotation.y = -Math.PI/2;
@@ -178,7 +186,7 @@ function animateModel(){
     // exit the function if loadModels has not completed or array does not exist
     if (!discModels) return;
     // calculate how far apart the discs need to be based on horizontal fov
-    distanceBetween = calculateDistance() + 2.2;
+    distanceBetween = calculateDistance() + 3;
     // keep track of prev distance
     let currentDistance = 0;
     // position each mesh along the x axis
@@ -337,5 +345,3 @@ function animate () {
 
 // call our animation loop function
 animate();
-
-
