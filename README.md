@@ -14,7 +14,7 @@ Each disc is a fully custom 3D model I built in Blender. I've never used Blender
 ---
 
 ## Demo
-
+https://github.com/user-attachments/assets/c0aba86f-c46f-4930-a6a0-c432c59e7dcc
 
 ---
 
