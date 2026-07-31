@@ -58,16 +58,43 @@ const discs = [
     '/models/DBZ.glb',
 ]
 
+//const loadingBar = document.querySelector('.loading-bar');
+const loadingScreenText = document.querySelector('.loading-screen-text');
+const loadingScreenButton = document.querySelector('.loading-screen-button');
+const loadingScreenInstructions = document.querySelector('.instructions');
+// add loading text to screen on page load
+loadingScreenText.classList.add('active');
+
+// know when our models have finished loading 
 const loadingManger = new THREE.LoadingManager(
     // loaded
     ()=> {
-        //console.log('loaded')
+        loadingScreenButton.classList.add('active');
+        loadingScreenInstructions.classList.add('active');
+        loadingScreenText.classList.remove('active');
+        /*
+        gsap.delayedCall(0.5, ()=>{
+            loadingBar.classList.add('ended');
+            // update the transform to remove progress bar from the screen
+            loadingBar.style.transform = '';
+        });
+        */
     },
     //progressing
-    () => {
-        //console.log('progress')
+    (itemUrl, itemsLoaded, itemsTotal) => {
+        const progressRatio = itemsLoaded / itemsTotal;
+        //loadingBar.style.transform = `scaleX(${progressRatio})`;
     }
 );
+
+// onclick listener to remove button and instructions
+loadingScreenButton.addEventListener('click', ()=>{
+    // fade out the alpha
+    gsap.to(overlayMaterial.uniforms.uAlpha, {duration: 3, value: 0});
+    // remove button and instructions
+    loadingScreenInstructions.classList.remove('active');
+    loadingScreenButton.classList.remove('active');
+})
 
 const gltfLoader = new GLTFLoader(loadingManger);
 // store each blender disc mesh that will animate
@@ -221,6 +248,30 @@ function animateModel(){
     }
 }
 
+/**
+ * Overlay
+ */
+const overlayGeomtry =  new THREE.PlaneGeometry(2, 2, 1, 1);
+const overlayMaterial = new THREE.ShaderMaterial({
+    transparent: true,
+    uniforms: {
+        uAlpha: {value: 1}
+    },
+    vertexShader: `
+        void main(){
+            gl_Position = vec4(position, 1.0);
+        }
+    `,
+    fragmentShader: `
+        uniform float uAlpha;
+
+        void main(){
+            gl_FragColor = vec4(0.0, 0.0, 0.0, uAlpha);
+        }
+    `
+})
+const overlay = new THREE.Mesh(overlayGeomtry, overlayMaterial);
+scene.add(overlay);
 
 /**
  * Resize

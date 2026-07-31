@@ -47,11 +47,13 @@ float cnoise(vec2 P){
 }
 
 void main(){
+  /*
     float strength = sin(cnoise(vUv * 7.0) * 20.0);
     float widthSize = fwidth(strength);
     float shape = smoothstep(0.5 - widthSize, 0.5 + widthSize, strength);
     gl_FragColor = vec4(shape, shape, shape, 1.0);
-    /*
+    */
+    
    // create topographical shape
     float shapeFormula = sin(cnoise(vUv * 7.0) * 20.0);
     // calculate the width
@@ -67,5 +69,5 @@ void main(){
     // combine the colors
     vec3 mixedColor = mix(whiteColor, uvColor, shape);
     gl_FragColor = vec4(mixedColor, 1.0);
-    */
+    
 }
