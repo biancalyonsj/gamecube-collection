@@ -5,7 +5,14 @@
 
 .scroll {
     width: 100vw;
-    height: 1200vh; /* 150vh * lenght of array*/
+    height: 1200vh; /* 150vh * length of array*/
+    height: 1200dvh; /*mobile height*/
+}
+
+
+/* Prevent User From Scrolling on loading screen */
+.active {
+    position: fixed;
 }
 
 ::-webkit-scrollbar { display: none }
@@ -37,7 +44,7 @@
  */
  
  /* Loading Screen */
-.loading-screen-text.active {
+.loading-screen-text {
     position: absolute;
     top: 50%;
     left: 50%;
@@ -46,31 +53,34 @@
     font-size: 42px;
 }
 
- .loading-screen-button.active {
+.loading-screen-button {
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background-color: black;
+    background-color: white;
     padding: 10px 40px;
     outline: none;
-    color: #e6dede;
+    color: black;
     border-radius: 1.2rem;
-    border: 3px solid white;
     font-size: 42px;
 }
 
 .loading-screen-button:hover {
   cursor: pointer;
-  background-color: #fff;
-  color: black;
+  background-color: black;
+  color: white;
 }
 
-.instructions.active {
+.instructions {
     position: absolute;
     top: 75%;
     left: 50%;
     transform: translate(-50%, -50%);
     font-size: 26px;
     color: #fff;
+}
+
+.hidden {
+    display: none;
 }

@@ -30,8 +30,9 @@ history.scrollRestoration = "manual";
 
 // window size
 const size = {
-    width: window.innerWidth,
-    height: window.innerHeight
+    // check if we are on mobile
+    width: window.visualViewport ? window.visualViewport.width : window.innerWidth,
+    height: window.visualViewport ? window.visualViewport.height : window.innerHeight
 }
 
 /**
@@ -62,6 +63,7 @@ const discs = [
 const loadingScreenText = document.querySelector('.loading-screen-text');
 const loadingScreenButton = document.querySelector('.loading-screen-button');
 const loadingScreenInstructions = document.querySelector('.instructions');
+const scrollDiv = document.querySelector('.scroll');
 // add loading text to screen on page load
 loadingScreenText.classList.add('active');
 
@@ -69,9 +71,11 @@ loadingScreenText.classList.add('active');
 const loadingManger = new THREE.LoadingManager(
     // loaded
     ()=> {
-        loadingScreenButton.classList.add('active');
-        loadingScreenInstructions.classList.add('active');
-        loadingScreenText.classList.remove('active');
+        loadingScreenButton.classList.remove('hidden');
+        loadingScreenInstructions.classList.remove('hidden');
+        loadingScreenText.classList.add('hidden');
+
+
         /*
         gsap.delayedCall(0.5, ()=>{
             loadingBar.classList.add('ended');
@@ -90,10 +94,11 @@ const loadingManger = new THREE.LoadingManager(
 // onclick listener to remove button and instructions
 loadingScreenButton.addEventListener('click', ()=>{
     // fade out the alpha
-    gsap.to(overlayMaterial.uniforms.uAlpha, {duration: 3, value: 0});
+    gsap.to(overlayMaterial.uniforms.uAlpha, {duration: 2, value: 0});
     // remove button and instructions
-    loadingScreenInstructions.classList.remove('active');
-    loadingScreenButton.classList.remove('active');
+    loadingScreenInstructions.classList.add('hidden');
+    loadingScreenButton.classList.add('hidden');
+    scrollDiv.classList.remove('active');
 })
 
 const gltfLoader = new GLTFLoader(loadingManger);
@@ -237,7 +242,10 @@ function animateModel(){
             // the first mesh position and rotate out
             tl.to(discModels[i].position, {x: -(distanceBetween), duration: 1.75});
             tl.to(discModels[i].rotation, {y: (Math.PI), duration: 1}, "-=1.5");
-        } else {
+        } else if( i == (discModels.length - 1)) {
+            // last disc, do not rotate out
+            tl.to(discModels[i].position, {x: '0', duration: 1.75, ease: "power1.out"}, '-=1');
+        }else {
             // position in
             tl.to(discModels[i].position, {x: '0', duration: 1.75, ease: "power1.out"}, '-=1');
             // rotate out position out
@@ -266,7 +274,7 @@ const overlayMaterial = new THREE.ShaderMaterial({
         uniform float uAlpha;
 
         void main(){
-            gl_FragColor = vec4(0.0, 0.0, 0.0, uAlpha);
+            gl_FragColor = vec4(0.2, 0.5, 1.0, uAlpha);
         }
     `
 })
