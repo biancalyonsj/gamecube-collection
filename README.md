@@ -11,7 +11,8 @@ Over a decade later and the GameCube is still my favorite console. So I built an
 Each disc is a fully custom 3D model I built in Blender. I've never used Blender before and I've always wanted to learn, so I'm super proud of how these turned out!
 
 ## Demo
-https://github.com/user-attachments/assets/c0aba86f-c46f-4930-a6a0-c432c59e7dcc
+<img width="1234" height="640" alt="github" src="https://github.com/user-attachments/assets/fad4edab-9f03-4a79-9fc0-a820fa5ce057" />
+
 
 
 ## Check it out here!
